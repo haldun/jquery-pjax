@@ -36,17 +36,42 @@ $.fn.pjax = function( container, options ) {
     return false
   }
 
-  return this.live('click', function(event){
+  return this.live('click submit', function(event){
     // Middle click, cmd click, and ctrl click should open
     // links in a new tab as normal.
-    if ( event.which > 1 || event.metaKey )
-      return true
+    if ( event.which > 1 || event.metaKey ) {
+      return true;
+    }
+
+    var $this = $(this);
+
+    // Skip clicks on forms
+    if ($this.is('form') && ('submit' != event.type)) {
+      return true;
+    }
+
+    // Skip PJAX if the form method is POST
+    if ($this.is('form[method="post"]')) {
+      return true;
+    }
+
+    // If href is '#' or is undefined skip this
+    var href = $this.attr('href')
+
+    if (!$this.is('form') && (href === '#' || href === undefined)) {
+      event.preventDefault();
+      return false;
+    }
 
     var defaults = {
-      url: this.href,
-      container: $(this).attr('data-pjax'),
-      clickedElement: $(this),
+      url: href || $this.attr('action') || document.location.href,
+      container: $this.attr('data-pjax'),
+      clickedElement: $this,
       fragment: null
+    }
+
+    if ($this.is('form')) {
+      options.data = $this.serializeArray()
     }
 
     $.pjax($.extend({}, defaults, options))
